@@ -164,16 +164,25 @@ class FunctionComponent(CircuitComponent):
             }
 
 class SeriesCircuit(CircuitComponent):
-    """Circuit component that processes components in series."""
+    """Circuit component that processes components in series with task queueing."""
     
-    def __init__(self, components: List[CircuitComponent], name: Optional[str] = None):
-        """Initialize the series circuit."""
+    def __init__(self, components: List[CircuitComponent], name: Optional[str] = None, max_queue_size: int = 0):
+        """Initialize the series circuit.
+        
+        Args:
+            components: List of components to process in series
+            name: Optional name for the circuit
+            max_queue_size: Maximum size of the task queue (0 for unlimited)
+        """
         super().__init__(name=name or "Series")
         self.components = components
+        self.max_queue_size = max_queue_size
+        self._queue = asyncio.Queue(maxsize=max_queue_size)
+        self._is_processing = False
     
     async def process(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process inputs through components in series.
+        Process inputs through components in series with proper queueing.
         
         Args:
             inputs: Dictionary of input values
@@ -181,24 +190,73 @@ class SeriesCircuit(CircuitComponent):
         Returns:
             Dictionary of output values from the last component
         """
-        result = inputs.copy()
+        # Create a future to track the completion of this task
+        completion_future = asyncio.Future()
         
-        # Process through each component in series
-        for component in self.components:
-            start_time = time.time()
-            result = await component.process(result)
-            elapsed = time.time() - start_time
-            
-            # For debugging
-            if "circuit_trace" not in result:
-                result["circuit_trace"] = []
-            
-            result["circuit_trace"].append({
-                "component": str(component),
-                "elapsed_ms": round(elapsed * 1000, 2)
-            })
+        # Package the task with its inputs and completion future
+        task_package = {
+            "inputs": inputs.copy(),
+            "completion_future": completion_future
+        }
         
-        return result
+        # Put the task in the queue
+        await self._queue.put(task_package)
+        
+        # Start processing the queue if not already running
+        if not self._is_processing:
+            # Start the queue processor without awaiting it
+            asyncio.create_task(self._process_queue())
+        
+        # Wait for this specific task to complete
+        return await completion_future
+    
+    async def _process_queue(self):
+        """Process tasks from the queue one at a time."""
+        self._is_processing = True
+        
+        try:
+            while not self._queue.empty():
+                # Get the next task from the queue
+                task_package = await self._queue.get()
+                
+                try:
+                    result = task_package["inputs"]
+                    trace_data = []
+                    
+                    # Process sequentially through each component
+                    for component in self.components:
+                        start_time = time.time()
+                        result = await component.process(result)
+                        elapsed = time.time() - start_time
+                        
+                        # Collect trace data
+                        trace_data.append({
+                            "component": str(component),
+                            "elapsed_ms": round(elapsed * 1000, 2)
+                        })
+                    
+                    # Add trace information to the result
+                    if "circuit_trace" not in result:
+                        result["circuit_trace"] = []
+                    
+                    result["circuit_trace"].extend(trace_data)
+                    
+                    # Mark this task as completed with the result
+                    task_package["completion_future"].set_result(result)
+                    
+                except Exception as e:
+                    # Handle errors and still mark the task as complete
+                    error_result = {
+                        "error": str(e),
+                        "inputs": task_package["inputs"]
+                    }
+                    task_package["completion_future"].set_result(error_result)
+                
+                # Mark the task as done in the queue
+                self._queue.task_done()
+        
+        finally:
+            self._is_processing = False
     
     def __str__(self) -> str:
         """Return a string representation of the circuit."""
@@ -206,16 +264,26 @@ class SeriesCircuit(CircuitComponent):
         return f"{self.name}: {components_str}"
 
 class ParallelCircuit(CircuitComponent):
-    """Circuit component that processes components in parallel."""
+    """Circuit component that processes components in parallel with concurrency control."""
     
-    def __init__(self, components: List[CircuitComponent], name: Optional[str] = None):
-        """Initialize the parallel circuit."""
+    def __init__(self, components: List[CircuitComponent], name: Optional[str] = None, max_concurrency: int = 0):
+        """Initialize the parallel circuit.
+        
+        Args:
+            components: List of components to process in parallel
+            name: Optional name for the circuit
+            max_concurrency: Maximum number of concurrent tasks (0 for unlimited)
+        """
         super().__init__(name=name or "Parallel")
         self.components = components
+        self.max_concurrency = max_concurrency if max_concurrency > 0 else len(components)
+        self._task_queue = asyncio.Queue()
+        self._semaphore = asyncio.Semaphore(self.max_concurrency)
+        self._is_processing = False
     
     async def process(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process inputs through components in parallel.
+        Process inputs through components in parallel with controlled concurrency.
         
         Args:
             inputs: Dictionary of input values
@@ -223,38 +291,120 @@ class ParallelCircuit(CircuitComponent):
         Returns:
             Dictionary of combined output values from all components
         """
-        # Create tasks for all components
-        tasks = []
+        # Create a future to track the completion of all components
+        completion_future = asyncio.Future()
+        
+        # Put all components' tasks in the queue
         for component in self.components:
-            tasks.append(asyncio.create_task(component.process(inputs.copy())))
+            await self._task_queue.put({
+                "component": component,
+                "inputs": inputs.copy()
+            })
         
-        # Await all tasks
+        # Start the task processor if not already running
+        if not self._is_processing:
+            asyncio.create_task(self._process_task_queue(completion_future, len(self.components)))
+        
+        # Wait for all components to complete
+        return await completion_future
+    
+    async def _process_task_queue(self, completion_future, total_tasks):
+        """
+        Process tasks from the queue with controlled concurrency.
+        
+        Args:
+            completion_future: Future to complete when all tasks are done
+            total_tasks: Total number of tasks to process
+        """
+        self._is_processing = True
         start_time = time.time()
-        results = await asyncio.gather(*tasks)
-        elapsed = time.time() - start_time
+        results = []
         
-        # Combine results from all components
-        combined_result = {}
-        for i, result in enumerate(results):
-            component_name = str(self.components[i])
-            combined_result[f"result_{i}"] = result
-            combined_result[f"{component_name}"] = result
+        # Create a list to store worker tasks
+        workers = []
         
-        # Add trace information
-        if "circuit_trace" not in combined_result:
-            combined_result["circuit_trace"] = []
+        try:
+            # Start worker tasks up to max_concurrency
+            for _ in range(min(self.max_concurrency, total_tasks)):
+                worker = asyncio.create_task(self._worker())
+                workers.append(worker)
+            
+            # Wait for all workers to complete
+            worker_results = await asyncio.gather(*workers)
+            
+            # Combine all worker results
+            for worker_result in worker_results:
+                results.extend(worker_result)
+            
+            # Calculate total elapsed time
+            elapsed = time.time() - start_time
+            
+            # Combine results from all components
+            combined_result = {}
+            for i, (component, result) in enumerate(results):
+                component_name = str(component)
+                combined_result[f"result_{i}"] = result
+                combined_result[f"{component_name}"] = result
+            
+            # Add trace information
+            if "circuit_trace" not in combined_result:
+                combined_result["circuit_trace"] = []
+            
+            combined_result["circuit_trace"].append({
+                "component": str(self),
+                "elapsed_ms": round(elapsed * 1000, 2),
+                "components": [str(c) for c in self.components]
+            })
+            
+            # Add the original query if present in any of the inputs
+            if results and "query" in results[0][1]:
+                combined_result["query"] = results[0][1]["query"]
+            
+            # Set the result in the completion future
+            completion_future.set_result(combined_result)
         
-        combined_result["circuit_trace"].append({
-            "component": str(self),
-            "elapsed_ms": round(elapsed * 1000, 2),
-            "components": [str(c) for c in self.components]
-        })
+        except Exception as e:
+            # Handle errors
+            completion_future.set_result({
+                "error": str(e),
+                "circuit": str(self)
+            })
         
-        # Add the original query
-        if "query" in inputs:
-            combined_result["query"] = inputs["query"]
+        finally:
+            self._is_processing = False
+    
+    async def _worker(self):
+        """
+        Worker to process tasks from the queue.
         
-        return combined_result
+        Returns:
+            List of (component, result) tuples
+        """
+        results = []
+        
+        while not self._task_queue.empty():
+            # Get a task from the queue
+            try:
+                task = await self._task_queue.get()
+                component = task["component"]
+                inputs = task["inputs"]
+                
+                # Acquire semaphore to control concurrency
+                async with self._semaphore:
+                    # Process the component
+                    result = await component.process(inputs)
+                    results.append((component, result))
+                
+                # Mark task as done
+                self._task_queue.task_done()
+            
+            except Exception as e:
+                # Handle errors for individual components
+                self._task_queue.task_done()
+                if "component" in task:
+                    results.append((task["component"], {"error": str(e)}))
+        
+        return results
     
     def __str__(self) -> str:
         """Return a string representation of the circuit."""
@@ -266,13 +416,15 @@ class CircuitBuilder:
     
     @staticmethod
     def series(*components: Union[CircuitComponent, Agent, BaseTool, Callable], 
-              name: Optional[str] = None) -> SeriesCircuit:
+              name: Optional[str] = None,
+              max_queue_size: int = 0) -> SeriesCircuit:
         """
-        Create a series circuit from components.
+        Create a series circuit from components with task queueing.
         
         Args:
             *components: Components to include in the circuit
             name: Optional name for the circuit
+            max_queue_size: Maximum size of the task queue (0 for unlimited)
             
         Returns:
             SeriesCircuit instance
@@ -293,17 +445,19 @@ class CircuitBuilder:
             else:
                 raise ValueError(f"Unsupported component type: {type(component)}")
         
-        return SeriesCircuit(circuit_components, name=name)
+        return SeriesCircuit(circuit_components, name=name, max_queue_size=max_queue_size)
     
     @staticmethod
     def parallel(*components: Union[CircuitComponent, Agent, BaseTool, Callable],
-               name: Optional[str] = None) -> ParallelCircuit:
+               name: Optional[str] = None,
+               max_concurrency: int = 0) -> ParallelCircuit:
         """
-        Create a parallel circuit from components.
+        Create a parallel circuit from components with concurrency control.
         
         Args:
             *components: Components to include in the circuit
             name: Optional name for the circuit
+            max_concurrency: Maximum number of concurrent tasks (0 for unlimited)
             
         Returns:
             ParallelCircuit instance
@@ -324,7 +478,7 @@ class CircuitBuilder:
             else:
                 raise ValueError(f"Unsupported component type: {type(component)}")
         
-        return ParallelCircuit(circuit_components, name=name)
+        return ParallelCircuit(circuit_components, name=name, max_concurrency=max_concurrency)
 
 class CircuitVisualizer:
     """Helper class for visualizing circuits."""

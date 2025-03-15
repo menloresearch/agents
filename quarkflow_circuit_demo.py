@@ -19,8 +19,6 @@ try:
 except ImportError:
     print("python-dotenv not installed, using environment variables directly")
 
-# Import the bhumi client for LLM inference
-from bhumi.base_client import BaseLLMClient, LLMConfig
 
 # Import the quarkflow library components
 import quarkflow
