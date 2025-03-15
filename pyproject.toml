@@ -3,10 +3,10 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pions"
+name = "quarkflow"
 version = "0.1.0"
 description = "A lightweight library for creating and managing AI agent circuits"
-readme = "pions/README.md"
+readme = "quarkflow/README.md"
 authors = [
     {name = "Menlo Deep Labs", email = "rach@menlo.ai"},
 ]
@@ -31,4 +31,4 @@ dependencies = [
 "Bug Tracker" = "https://github.com/janhq/pions/issues"
 
 [tool.setuptools]
-packages = ["pions"]
+packages = ["quarkflow"]

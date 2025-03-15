@@ -1,5 +1,5 @@
-pathik==0.1.0
+pathik==0.1.1
 python-dotenv==1.0.0
-bhumi==0.1.0
-aiohttp==3.8.5
+bhumi==0.1.6
+aiohttp==3.11.13
 asyncio==3.4.3

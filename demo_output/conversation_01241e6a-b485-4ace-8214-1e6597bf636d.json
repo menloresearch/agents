@@ -1,0 +1,167 @@
+[
+  {
+    "role": "system",
+    "content": "Executed tool 'logger'",
+    "tool_result": {
+      "message": "New question: What are neural networks?",
+      "logged": true,
+      "log_file": "demo_output/agent_log.txt"
+    },
+    "timestamp": "2025-03-15T14:45:49.045465"
+  },
+  {
+    "role": "user",
+    "content": "What are neural networks?",
+    "timestamp": "2025-03-15T14:45:49.045566"
+  },
+  {
+    "role": "assistant",
+    "content": {
+      "query": "What are neural networks?",
+      "research": {
+        "query": "What are neural networks?",
+        "search_results": [
+          {
+            "title": "Mock Result 1 for What are neural networks?",
+            "url": "https://example.com/mock1"
+          },
+          {
+            "title": "Mock Result 2 for What are neural networks?",
+            "url": "https://example.com/mock2"
+          }
+        ],
+        "analysis": {
+          "summary": "Analysis of search results for 'What are neural networks?'",
+          "key_points": [
+            "This is a mock analysis point 1",
+            "This is a mock analysis point 2",
+            "This is a mock analysis point 3"
+          ],
+          "source_quality": "high"
+        }
+      },
+      "analysis": {
+        "word_count": 18,
+        "summary": "Title: Mock Result 1 for What are neural networks?\nTitle: Mock Result 2 for What are neural networks?",
+        "sentiment": "neutral",
+        "keywords": [
+          "key1",
+          "key2",
+          "key3"
+        ]
+      },
+      "summary": "Title: Mock Result 1 for What are neural networks?\nTitle: Mock Result 2 for What are neural networks?"
+    },
+    "timestamp": "2025-03-15T14:45:49.045653"
+  },
+  {
+    "role": "system",
+    "content": "Executed tool 'logger'",
+    "tool_result": {
+      "message": "New question: How does quantum computing work?",
+      "logged": true,
+      "log_file": "demo_output/agent_log.txt"
+    },
+    "timestamp": "2025-03-15T14:45:49.045780"
+  },
+  {
+    "role": "user",
+    "content": "How does quantum computing work?",
+    "timestamp": "2025-03-15T14:45:49.045861"
+  },
+  {
+    "role": "assistant",
+    "content": {
+      "query": "How does quantum computing work?",
+      "research": {
+        "query": "How does quantum computing work?",
+        "search_results": [
+          {
+            "title": "Mock Result 1 for How does quantum computing work?",
+            "url": "https://example.com/mock1"
+          },
+          {
+            "title": "Mock Result 2 for How does quantum computing work?",
+            "url": "https://example.com/mock2"
+          }
+        ],
+        "analysis": {
+          "summary": "Analysis of search results for 'How does quantum computing work?'",
+          "key_points": [
+            "This is a mock analysis point 1",
+            "This is a mock analysis point 2",
+            "This is a mock analysis point 3"
+          ],
+          "source_quality": "high"
+        }
+      },
+      "analysis": {
+        "word_count": 20,
+        "summary": "Title: Mock Result 1 for How does quantum computing work?\nTitle: Mock Result 2 for How does quantum computing work?",
+        "sentiment": "neutral",
+        "keywords": [
+          "key1",
+          "key2",
+          "key3"
+        ]
+      },
+      "summary": "Title: Mock Result 1 for How does quantum computing work?\nTitle: Mock Result 2 for How does quantum computing work?"
+    },
+    "timestamp": "2025-03-15T14:45:49.045951"
+  },
+  {
+    "role": "system",
+    "content": "Executed tool 'logger'",
+    "tool_result": {
+      "message": "New question: Explain the basics of reinforcement learning",
+      "logged": true,
+      "log_file": "demo_output/agent_log.txt"
+    },
+    "timestamp": "2025-03-15T14:45:49.046068"
+  },
+  {
+    "role": "user",
+    "content": "Explain the basics of reinforcement learning",
+    "timestamp": "2025-03-15T14:45:49.046156"
+  },
+  {
+    "role": "assistant",
+    "content": {
+      "query": "Explain the basics of reinforcement learning",
+      "research": {
+        "query": "Explain the basics of reinforcement learning",
+        "search_results": [
+          {
+            "title": "Mock Result 1 for Explain the basics of reinforcement learning",
+            "url": "https://example.com/mock1"
+          },
+          {
+            "title": "Mock Result 2 for Explain the basics of reinforcement learning",
+            "url": "https://example.com/mock2"
+          }
+        ],
+        "analysis": {
+          "summary": "Analysis of search results for 'Explain the basics of reinforcement learning'",
+          "key_points": [
+            "This is a mock analysis point 1",
+            "This is a mock analysis point 2",
+            "This is a mock analysis point 3"
+          ],
+          "source_quality": "high"
+        }
+      },
+      "analysis": {
+        "word_count": 22,
+        "summary": "Title: Mock Result 1 for Explain the basics of reinforcement learning\nTitle: Mock Result 2 for Explain the basics of reinforcement learning",
+        "sentiment": "neutral",
+        "keywords": [
+          "key1",
+          "key2",
+          "key3"
+        ]
+      },
+      "summary": "Title: Mock Result 1 for Explain the basics of reinforcement learning\nTitle: Mock Result 2 for Explain the basics of reinforcement learning"
+    },
+    "timestamp": "2025-03-15T14:45:49.046252"
+  }
+]

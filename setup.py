@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="pions",
+    name="quarkflow",
     version="0.1.0",
     description="A lightweight library for creating and managing AI agent circuits",
     author="Menlo Deep Labs",
