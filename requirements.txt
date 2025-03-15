@@ -1,0 +1,5 @@
+pathik==0.1.0
+python-dotenv==1.0.0
+bhumi==0.1.0
+aiohttp==3.8.5
+asyncio==3.4.3
