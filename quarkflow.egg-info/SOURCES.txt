@@ -8,6 +8,7 @@ quarkflow/circuit_examples.py
 quarkflow/circuits.py
 quarkflow/controller.py
 quarkflow/examples.py
+quarkflow/llm.py
 quarkflow/tools.py
 quarkflow.egg-info/PKG-INFO
 quarkflow.egg-info/SOURCES.txt

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quarkflow"
-version = "0.1.0"
+version = "0.1.2"
 description = "A lightweight library for creating and managing AI agent circuits"
 readme = "quarkflow/README.md"
 authors = [
