@@ -1,141 +1,150 @@
-# Deep Research Tool
+# Quarkflow
 
-A powerful research tool that leverages the Brave Search API to find relevant information, extracts content using pathik, and analyzes it using Google's Gemini AI model.
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.1.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/python-3.8+-orange.svg" alt="Python">
+</p>
+
+## A Lightweight Library for Creating and Managing AI Agent Circuits
+
+Quarkflow is a flexible, circuit-based AI agent orchestration library that allows you to build, connect, and deploy sophisticated AI agent workflows. Inspired by fundamental particles, Quarkflow provides the building blocks for creating complex agent interactions with minimal overhead.
 
 ## Features
 
-- **Web Search**: Search the web using Brave Search API
-- **Content Extraction**: Extract content from web pages using pathik
-- **AI Analysis**: Analyze the content using Google's Gemini AI model
-- **Multiple Analysis Types**: Choose from comprehensive analysis, quick summary, facts extraction, or insights
-- **Domain Filtering**: Filter search results by domain
-- **Customizable**: Adjust search parameters, language, country, and more
-- **Gemini-Powered Reports**: Generate comprehensive research reports with executive summaries, detailed analysis, and recommendations
-- **Parallel Processing**: Crawl multiple web pages simultaneously for faster research
-- **High-Volume Research**: Analyze up to dozens of web pages in a single research session
+- **Circuit-based architecture** - Create reusable components that can be connected in series or parallel
+- **Flexible agent composition** - Combine different agent types and tools into unified workflows
+- **Built-in visualization** - Visualize your agent circuits for easier debugging and sharing
+- **Lightweight implementation** - Focus on essential functionality with minimal dependencies
+- **Compatible with major LLM providers** - Works with bhumi for seamless integration with various LLM backends
 
-## Research Agent
+## Installation
 
-The Research Agent extends basic research capabilities with:
+```bash
+pip install quarkflow
+```
 
-- **Intent Recognition**: Automatically determines if a query requires fresh research, existing knowledge retrieval, or simple conversation
-- **Memory System**: Stores and retrieves conversation history for contextual awareness
-- **RAG Capabilities**: Leverages previously researched information to answer questions without new research
-- **Vector Database**: Stores and retrieves documents based on semantic similarity
-- **Embedding System**: Converts text into vector representations for efficient retrieval
-- **Multi-modal Response**: Generates responses using both fresh research and existing knowledge
+## Quick Start
 
-### Agent Components
+### Basic Agent Example
 
-- **Vector Database**: Abstracted storage system for document embeddings with support for multiple backends
-- **Embedding Provider**: Converts text to vector representations with pluggable provider architecture
-- **Chat Memory**: Manages conversation history with persistence across sessions
-- **Research Tool**: Core implementation of web search, content extraction, and analysis
-- **Report Generator**: Creates comprehensive research reports in multiple formats
+```python
+from quarkflow import Agent, BaseTool, ControllerAgent
+from bhumi.base_client import BaseLLMClient, LLMConfig
+
+# Create a simple agent
+class ResearchAgent(Agent):
+    def __init__(self, llm_config=None):
+        super().__init__(name="research_agent", llm_config=llm_config)
+    
+    async def process(self, query, **kwargs):
+        # Agent processing logic here
+        return {"result": f"Research results for: {query}"}
+
+# Create a tool
+class SearchTool(BaseTool):
+    def __init__(self, api_key=None):
+        super().__init__(name="search_tool")
+        self.api_key = api_key
+    
+    async def execute(self, query, **kwargs):
+        # Tool execution logic here
+        return {"results": [f"Result 1 for {query}", f"Result 2 for {query}"]}
+
+# Use the agent
+async def main():
+    # Configure LLM
+    llm_config = LLMConfig(api_key="YOUR_API_KEY", model="MODEL_NAME")
+    
+    # Initialize agent
+    agent = ResearchAgent(llm_config=llm_config)
+    
+    # Process a query
+    result = await agent.process("quantum computing applications")
+    print(result)
+```
+
+### Building Circuits
+
+```python
+from quarkflow import CircuitBuilder, CircuitVisualizer
+
+# Create circuit components
+research_agent = ResearchAgent(llm_config=llm_config)
+search_tool = SearchTool(api_key="SEARCH_API_KEY")
+
+# Build a circuit
+builder = CircuitBuilder()
+circuit = builder.series(
+    search_tool,
+    research_agent
+)
+
+# Execute the circuit
+result = await circuit.execute("renewable energy developments")
+
+# Visualize the circuit
+visualizer = CircuitVisualizer()
+visualizer.visualize(circuit, "my_circuit.png")
+```
 
 ## Advanced Usage
 
-The tool provides several command-line options:
+Quarkflow supports complex circuit compositions with branches, parallel processing, and conditional flows:
 
-```bash
-python deep_research_cli.py "climate change solutions" --count 15 --pages 5 --analysis insights --filter-domains "nature.com,science.org,nationalgeographic.com" --generate-report
+```python
+# Create a parallel circuit that processes data through multiple agents simultaneously
+parallel_circuit = builder.parallel(
+    research_agent,
+    analysis_agent
+)
+
+# Create a more complex workflow with series and parallel components
+complex_circuit = builder.series(
+    search_tool,
+    builder.parallel(
+        research_agent,
+        analysis_agent
+    ),
+    summarization_agent
+)
 ```
 
-### Command Line Arguments
+## Examples
 
-- `query` - Your research query (required)
-- `--count` - Number of search results to fetch (default: 20, max: 20)
-- `--pages` - Maximum number of pages to analyze (default: 10)
-- `--country` - Country code for search results (default: US)
-- `--lang` - Search language (default: en)
-- `--filter-domains` - Comma-separated list of domains to include
-- `--analysis` - Type of analysis to perform (choices: "comprehensive", "summary", "facts", "insights", default: "comprehensive")
-- `--timeout` - Reserved for future use (default: 30, currently not affecting crawling)
-- `--output-dir` - Directory to save output files (default: output_data)
-- `--debug` - Enable debug mode
-- `--generate-report` - Generate a comprehensive report using Gemini's advanced analysis capabilities
-- `--model` - Gemini model to use for report generation (default: gemini/gemini-1.5-flash-8b)
-- `--max-concurrent` - Maximum number of concurrent URL crawling tasks (default: 5)
-- `--test-apis` - Test the Brave Search and Gemini APIs without performing research
+See the `quarkflow_demo.py` and `quarkflow_circuit_demo.py` files for full working examples.
 
-## Performance Tips
+## Deployment
 
-### Optimizing Parallel Processing
-
-The tool now supports parallel processing, which significantly improves performance when analyzing multiple pages. You can adjust the degree of parallelism with the `--max-concurrent` parameter:
+Use the provided `deploy.sh` script to easily deploy your package:
 
 ```bash
-# Process up to 10 URLs in parallel
-python deep_research_cli.py "your research topic" --max-concurrent 10
+# Basic deployment (build and install locally)
+./deploy.sh
+
+# Deploy to test PyPI
+./deploy.sh --pypi
+
+# Deploy to production PyPI
+./deploy.sh --pypi --prod
+
+# Create a Git tag and push it
+./deploy.sh --tag
 ```
 
-For most systems, setting `--max-concurrent` between 5-10 provides a good balance between speed and system resource usage. Higher values may improve performance on systems with many CPU cores and good internet connections.
+## Documentation
 
-### Handling Large Volumes of Data
+For more detailed documentation, visit our [GitHub repository](https://github.com/janhq/pions).
 
-For very comprehensive research, you can increase the number of pages:
+## Contributing
 
-```bash
-# Analyze up to 20 pages from 30 search results
-python deep_research_cli.py "deep learning neural networks" --count 30 --pages 20
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Note that analyzing more pages requires more processing time and may increase the cost of API usage for Brave Search and Gemini.
+## License
 
-### Brave Search API Limitations
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-The Brave Search API has certain limitations to be aware of:
+## Acknowledgments
 
-- **Results Count**: The API limits the number of results per request to a maximum of 20
-- **Query Length**: Very long queries may be truncated
-- **Rate Limits**: There may be rate limits depending on your API tier
-- **Valid Parameters**: The API requires valid 2-letter country and language codes
-
-If you encounter a validation error, try:
-- Using shorter, more specific queries
-- Ensuring your API key is valid and active
-- Using standard 2-letter country and language codes (e.g., "US", "en")
-
-### Testing API Connections
-
-If you're having trouble with API connections, you can test the APIs before running a full research session:
-
-```bash
-python deep_research_cli.py --test-apis
-```
-
-This will:
-- Test your Brave Search API key
-- Display rate limit information if available
-- Test your Gemini API key
-- Provide detailed error messages if anything is wrong
-
-Once you've verified your API connections are working, you can proceed with your research:
-
-```bash
-# First test APIs, then perform research if successful
-python deep_research_cli.py --test-apis "quantum computing applications"
-```
-
-## Output
-
-The tool saves the research results in JSON format in the `output_data` directory (or the directory specified with `--output-dir`). The filename includes the query and timestamp.
-
-## Report Generation
-
-When using the `--generate-report` flag, the tool will use Gemini to generate a comprehensive research report that includes:
-
-1. **Executive Summary**: A concise overview of the key findings (250-300 words)
-2. **Detailed Analysis**: In-depth examination of key themes and concepts (800-1000 words)
-3. **Conclusions and Recommendations**: Summary of key takeaways and actionable recommendations
-4. **Source Analysis**: Detailed insights for each source, highlighting unique contributions
-
-Reports are generated in three formats:
-- JSON: Contains all the raw data
-- Markdown: Formatted for easy viewing in text editors or GitHub
-- HTML: Beautifully styled with CSS for browser viewing
-
-Example command to generate a report:
-```bash
-python deep_research_cli.py "quantum computing applications" --generate-report --model "gemini/gemini-1.5-flash-8b"
-```
+* Developed by Menlo Deep Labs
+* Powered by [bhumi](https://github.com/janhq/bhumi) for LLM operations
